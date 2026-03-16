@@ -5,7 +5,7 @@ use twitch_api::{
     eventsub::{self, Event, Message, Payload},
     HelixClient,
 };
-use twitch_oauth2::{Scope, TwitchToken as _, UserToken};
+use twitch_oauth2::{TwitchToken as _, UserToken};
 use eyre::WrapErr;
 
 use crate::websocket;

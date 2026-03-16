@@ -10,8 +10,7 @@ use axum::{
 };
 use entity::post;
 use flash::{PostResponse, get_flash_cookie, post_response};
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use service::{Mutation, Query as QueryService};
 use std::env;
@@ -38,6 +37,7 @@ pub async fn start(config: AppConfig) -> Result<(), eyre::Report> {
 
     let app = Router::new()
         .route("/", get(list_streamers).post(create_post))
+        .route("/posts", get(list_posts).post(create_post))
         .route("/{id}", get(edit_post).post(update_post))
         .route("/new", get(new_post))
         .route("/delete/{id}", post(delete_post))
