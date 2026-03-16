@@ -7,13 +7,12 @@ use tracing::Instrument;
 use twitch_oauth2::url;
 
 use twitch_api::{
+    HelixClient,
     eventsub::{
-        self,
+        self, Event,
         event::websocket::{EventsubWebsocketData, ReconnectPayload, SessionData, WelcomePayload},
-        Event,
     },
     types::{self},
-    HelixClient,
 };
 use twitch_oauth2::{TwitchToken, UserToken};
 

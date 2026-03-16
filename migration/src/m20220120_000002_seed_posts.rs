@@ -41,4 +41,3 @@ impl MigrationTrait for Migration {
         Ok(())
     }
 }
-

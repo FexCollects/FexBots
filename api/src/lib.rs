@@ -89,9 +89,10 @@ async fn list_streamers(
     let page = params.page.unwrap_or(1);
     let posts_per_page = params.posts_per_page.unwrap_or(5);
 
-    let (streamers, num_pages) = QueryService::find_streamers_in_page(&state.conn, page, posts_per_page)
-        .await
-        .expect("Cannot find streamers in page");
+    let (streamers, num_pages) =
+        QueryService::find_streamers_in_page(&state.conn, page, posts_per_page)
+            .await
+            .expect("Cannot find streamers in page");
 
     let mut ctx = tera::Context::new();
     ctx.insert("posts", &streamers);

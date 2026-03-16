@@ -1,12 +1,12 @@
+use eyre::WrapErr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use twitch_api::{
+    HelixClient,
     client::ClientDefault,
     eventsub::{self, Event, Message, Payload},
-    HelixClient,
 };
 use twitch_oauth2::{TwitchToken as _, UserToken};
-use eyre::WrapErr;
 
 use crate::websocket;
 
@@ -36,8 +36,9 @@ impl FexBot {
             &client,
             refresh_token,
             client_id,
-            client_secret
-        ).await?;
+            client_secret,
+        )
+        .await?;
         let token = Arc::new(Mutex::new(token));
 
         Ok(FexBot {
@@ -98,7 +99,9 @@ impl FexBot {
             }) => {
                 tracing::debug!(
                     "[{}] {}: {}",
-                    timestamp, payload.chatter_user_name, payload.message.text
+                    timestamp,
+                    payload.chatter_user_name,
+                    payload.message.text
                 );
                 if let Some(command) = payload.message.text.strip_prefix("!") {
                     let mut split_whitespace = command.split_whitespace();

@@ -32,26 +32,18 @@ async fn main() -> Result<(), eyre::Report> {
 
     // Create the bot
     let fexbot = FexBot::new(FexBotConfig {
-            client_id,
-            client_secret,
-            refresh_token,
-            bot_user_id,
-    }).await?;
+        client_id,
+        client_secret,
+        refresh_token,
+        bot_user_id,
+    })
+    .await?;
 
     // Run the bot in its own future
-    let bot_task = async move {
-        fexbot.start().await
-    };
+    let bot_task = async move { fexbot.start().await };
 
     // Run the application
-    let app_task = async move {
-        api::start(api::AppConfig {
-            conn,
-            host,
-            port,
-        }).await
-    };
-
+    let app_task = async move { api::start(api::AppConfig { conn, host, port }).await };
 
     futures::future::try_join(bot_task, app_task).await?;
     Ok(())
