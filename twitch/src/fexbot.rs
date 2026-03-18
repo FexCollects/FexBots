@@ -45,6 +45,8 @@ impl FexBot {
 
         let commands: Vec<(String, CmdRunFn)> = vec![
             (PingCommand::TRIGGER.into(), PingCommand::run as CmdRunFn),
+            (DogFontsCommand::TRIGGER.into(), DogFontsCommand::run as CmdRunFn),
+            (MoreMolesCommand::TRIGGER.into(), MoreMolesCommand::run as CmdRunFn),
         ];
 
         Ok(FexBot {
@@ -148,6 +150,42 @@ impl FexBot {
         token: &UserToken,
     ) -> Result<(), eyre::Report> {
         let body = payload.message.text.clone();
+        let chatter_id = &payload.chatter_user_id;
+
+        // Never respond to ourselves (1215874701 -> FexBots user id)
+        if chatter_id.as_str() == "1215874701" {
+            return Ok(());
+        }
+
+        // Special case the commands that look for a specific substring in the
+        // message body
+        if body.contains("he'll") {
+            self.client
+                .send_chat_message_reply(
+                    &subscription.condition.broadcaster_user_id,
+                    &subscription.condition.user_id,
+                    &payload.message_id,
+                    "yeag",
+                    token,
+                )
+                .await?;
+            return Ok(());
+        }
+
+        if body.contains("honk") {
+            self.client
+                .send_chat_message_reply(
+                    &subscription.condition.broadcaster_user_id,
+                    &subscription.condition.user_id,
+                    &payload.message_id,
+                    "honk 🪿",
+                    token,
+                )
+                .await?;
+            return Ok(());
+        }
+
+        // Handle the normal !command commands
         if !body.starts_with("!") {
             return Ok(());
         }
