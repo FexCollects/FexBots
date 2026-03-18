@@ -2,5 +2,6 @@
 
 pub mod prelude;
 
+pub mod chatter;
+pub mod command;
 pub mod post;
-pub mod streamer;

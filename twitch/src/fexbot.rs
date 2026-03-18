@@ -1,4 +1,6 @@
+use db::mutation::Mutation;
 use eyre::WrapErr;
+use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use twitch_api::{
@@ -16,6 +18,7 @@ pub struct FexBotConfig {
     pub client_secret: String,
     pub refresh_token: String,
     pub bot_user_id: String,
+    pub conn: DatabaseConnection,
 }
 
 pub struct FexBot {
@@ -23,6 +26,7 @@ pub struct FexBot {
     pub token: Arc<Mutex<twitch_oauth2::UserToken>>,
     pub bot_id: twitch_api::types::UserId,
     pub commands: Vec<(String, CmdRunFn)>,
+    pub conn: DatabaseConnection,
 }
 
 impl FexBot {
@@ -54,6 +58,7 @@ impl FexBot {
             token,
             bot_id: twitch_api::types::UserId::new(config.bot_user_id),
             commands,
+            conn: config.conn,
         })
     }
 
@@ -150,12 +155,15 @@ impl FexBot {
         token: &UserToken,
     ) -> Result<(), eyre::Report> {
         let body = payload.message.text.clone();
-        let chatter_id = &payload.chatter_user_id;
+        let chatter_id = payload.chatter_user_id.as_str();
+        let int_chatter_id = chatter_id.parse::<i64>()?;
 
         // Never respond to ourselves (1215874701 -> FexBots user id)
-        if chatter_id.as_str() == "1215874701" {
+        if chatter_id == "1215874701" {
             return Ok(());
         }
+
+        let _ = Mutation::get_or_create_chatter(&self.conn, int_chatter_id, payload.chatter_user_name.as_str().into()).await?; 
 
         // Special case the commands that look for a specific substring in the
         // message body

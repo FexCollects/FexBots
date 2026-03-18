@@ -1,5 +1,4 @@
 mod flash;
-pub mod service;
 
 use axum::{
     Router,
@@ -8,11 +7,11 @@ use axum::{
     response::Html,
     routing::{get, get_service, post},
 };
+use db::{mutation::Mutation, query::Query as QueryService};
 use entity::post;
 use flash::{PostResponse, get_flash_cookie, post_response};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use service::{Mutation, Query as QueryService};
 use std::env;
 use tera::Tera;
 use tower_cookies::{CookieManagerLayer, Cookies};
@@ -36,8 +35,7 @@ pub async fn start(config: AppConfig) -> Result<(), eyre::Report> {
     let state = AppState { templates, conn };
 
     let app = Router::new()
-        .route("/", get(list_streamers).post(create_post))
-        .route("/posts", get(list_posts).post(create_post))
+        .route("/", get(list_posts).post(create_post))
         .route("/{id}", get(edit_post).post(update_post))
         .route("/new", get(new_post))
         .route("/delete/{id}", post(delete_post))
@@ -79,37 +77,6 @@ struct Params {
 struct FlashData {
     kind: String,
     message: String,
-}
-
-async fn list_streamers(
-    state: State<AppState>,
-    Query(params): Query<Params>,
-    cookies: Cookies,
-) -> Result<Html<String>, (StatusCode, &'static str)> {
-    let page = params.page.unwrap_or(1);
-    let posts_per_page = params.posts_per_page.unwrap_or(5);
-
-    let (streamers, num_pages) =
-        QueryService::find_streamers_in_page(&state.conn, page, posts_per_page)
-            .await
-            .expect("Cannot find streamers in page");
-
-    let mut ctx = tera::Context::new();
-    ctx.insert("posts", &streamers);
-    ctx.insert("page", &page);
-    ctx.insert("posts_per_page", &posts_per_page);
-    ctx.insert("num_pages", &num_pages);
-
-    if let Some(value) = get_flash_cookie::<FlashData>(&cookies) {
-        ctx.insert("flash", &value);
-    }
-
-    let body = state
-        .templates
-        .render("index.html.tera", &ctx)
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Template error"))?;
-
-    Ok(Html(body))
 }
 
 async fn list_posts(

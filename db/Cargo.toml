@@ -1,0 +1,14 @@
+[package]
+edition      = "2024"
+name         = "db"
+publish      = false
+rust-version = "1.85.0"
+version      = "0.1.0"
+
+[lib]
+name = "db"
+path = "src/lib.rs"
+
+[dependencies]
+entity             = { path = "../entity" }
+sea-orm = { version = "2.0.0-rc", features = [ "sqlx-sqlite", "runtime-tokio", "macros" ] }

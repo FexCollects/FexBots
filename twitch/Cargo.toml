@@ -10,6 +10,8 @@ name = "twitch"
 path = "src/lib.rs"
 
 [dependencies]
+db                 = { path = "../db" }
+sea-orm = { version = "2.0.0-rc", features = [ "sqlx-sqlite", "runtime-tokio", "macros" ] }
 twitch_api = { version = "0.7.2", features = ["eventsub", "helix", "reqwest"] }
 twitch_oauth2 = { version = "=0.15.2", features = ["client"] }
 tracing = "0.1.41"

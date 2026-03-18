@@ -2,8 +2,9 @@ pub use sea_orm_migration::prelude::*;
 
 mod m20220120_000001_create_post_table;
 mod m20220120_000002_seed_posts;
-mod m20260315_051110_create_streamer;
-mod m20260315_051846_seed_streamer;
+mod m20260318_041233_create_chatter;
+mod m20260318_051448_create_command;
+mod m20260318_051631_seed_command;
 
 pub struct Migrator;
 
@@ -13,8 +14,9 @@ impl MigratorTrait for Migrator {
         vec![
             Box::new(m20220120_000001_create_post_table::Migration),
             Box::new(m20220120_000002_seed_posts::Migration),
-            Box::new(m20260315_051110_create_streamer::Migration),
-            Box::new(m20260315_051846_seed_streamer::Migration),
+            Box::new(m20260318_041233_create_chatter::Migration),
+            Box::new(m20260318_051448_create_command::Migration),
+            Box::new(m20260318_051631_seed_command::Migration),
         ]
     }
 }

@@ -9,12 +9,12 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table("streamer")
+                    .table("chatter")
                     .if_not_exists()
-                    .col(pk_auto("id"))
+                    .col(integer("id").not_null().primary_key())
                     .col(string("name").not_null())
-                    .col(string("broadcaster_user_id").not_null())
-                    .col(boolean("shiny_roll_enabled").not_null().default(true))
+                    .col(integer("tid").not_null().default(0))
+                    .col(integer("sid").not_null().default(0))
                     .to_owned(),
             )
             .await
@@ -22,7 +22,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table("streamer").to_owned())
+            .drop_table(Table::drop().table("chatter").to_owned())
             .await
     }
 }

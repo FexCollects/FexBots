@@ -36,6 +36,7 @@ async fn main() -> Result<(), eyre::Report> {
         client_secret,
         refresh_token,
         bot_user_id,
+        conn: conn.clone(),
     })
     .await?;
 
