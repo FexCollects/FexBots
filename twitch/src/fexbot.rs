@@ -9,6 +9,7 @@ use twitch_api::{
 use twitch_oauth2::{TwitchToken as _, UserToken};
 
 use crate::websocket;
+use crate::commands::*;
 
 pub struct FexBotConfig {
     pub client_id: String,
@@ -21,6 +22,7 @@ pub struct FexBot {
     pub client: HelixClient<'static, reqwest::Client>,
     pub token: Arc<Mutex<twitch_oauth2::UserToken>>,
     pub bot_id: twitch_api::types::UserId,
+    pub commands: Vec<(String, CmdRunFn)>,
 }
 
 impl FexBot {
@@ -41,10 +43,15 @@ impl FexBot {
         .await?;
         let token = Arc::new(Mutex::new(token));
 
+        let commands: Vec<(String, CmdRunFn)> = vec![
+            (PingCommand::TRIGGER.into(), PingCommand::run as CmdRunFn),
+        ];
+
         Ok(FexBot {
             client,
             token,
             bot_id: twitch_api::types::UserId::new(config.bot_user_id),
+            commands,
         })
     }
 
@@ -56,7 +63,12 @@ impl FexBot {
             token: self.token.clone(),
             client: self.client.clone(),
             connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
-            chats: vec![twitch_api::types::UserId::new("68411561".into())],
+            chats: vec![
+                twitch_api::types::UserId::new("68411561".into()), // FexCollects
+//                twitch_api::types::UserId::new("176723607".into()), // SBCoop
+//                twitch_api::types::UserId::new("106239207".into()), // Magnemite
+                twitch_api::types::UserId::new("861073341".into()), // Yarnity
+            ],
         };
         let refresh_token = async move {
             let token = self.token.clone();
@@ -103,14 +115,7 @@ impl FexBot {
                     payload.chatter_user_name,
                     payload.message.text
                 );
-                if let Some(command) = payload.message.text.strip_prefix("!") {
-                    let mut split_whitespace = command.split_whitespace();
-                    let command = split_whitespace.next().unwrap();
-                    let rest = split_whitespace.next();
-
-                    self.command(&payload, &subscription, command, rest, &token)
-                        .await?;
-                }
+                self.command(&payload, &subscription, &token).await?;
             }
             Event::ChannelChatNotificationV1(Payload {
                 message: Message::Notification(payload),
@@ -140,20 +145,30 @@ impl FexBot {
         subscription: &eventsub::EventSubscriptionInformation<
             eventsub::channel::ChannelChatMessageV1,
         >,
-        command: &str,
-        _rest: Option<&str>,
         token: &UserToken,
     ) -> Result<(), eyre::Report> {
-        tracing::info!("Command: {}", command);
-        self.client
-            .send_chat_message_reply(
-                &subscription.condition.broadcaster_user_id,
-                &subscription.condition.user_id,
-                &payload.message_id,
-                command,
-                token,
-            )
-            .await?;
+        let body = payload.message.text.clone();
+        if !body.starts_with("!") {
+            return Ok(());
+        }
+
+        for (name, func) in &self.commands {
+            if body.starts_with(name) {
+                if let Some(res) = func(body) {
+                    self.client
+                        .send_chat_message_reply(
+                            &subscription.condition.broadcaster_user_id,
+                            &subscription.condition.user_id,
+                            &payload.message_id,
+                            &*res,
+                            token,
+                        )
+                        .await?;
+                }
+                break;
+            }
+        }
+
         Ok(())
     }
 }

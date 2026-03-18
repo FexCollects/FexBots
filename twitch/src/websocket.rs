@@ -1,5 +1,4 @@
 use eyre::WrapErr;
-use futures::TryStreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_tungstenite::tungstenite;
@@ -143,7 +142,7 @@ impl ChatWebsocketClient {
         let transport = eventsub::Transport::websocket(data.id.clone());
         for id in &self.chats {
             let user_id = token.user_id().unwrap().to_owned();
-            let subs: Vec<_> = self
+            /*let subs: Vec<_> = self
                 .client
                 .get_eventsub_subscriptions(Some(eventsub::Status::Enabled), None, None, &*token)
                 .map_ok(|r| {
@@ -162,8 +161,9 @@ impl ChatWebsocketClient {
                 .try_collect()
                 .await?;
             if !subs.is_empty() {
+                tracing::info!("skipping new sub");
                 continue;
-            }
+            }*/
             let message =
                 eventsub::channel::chat::ChannelChatMessageV1::new(id.clone(), user_id.clone());
             self.client
