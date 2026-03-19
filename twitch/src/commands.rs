@@ -10,7 +10,7 @@ pub enum Command {
     DogFonts,
     MoreMoles,
     // TODO: implement once per day limit
-    ShinyRoll, 
+    ShinyRoll,
     // TODO: add Team X Badge to bag
     AMBeef,
     Followage,
@@ -20,8 +20,8 @@ pub enum Command {
     // TODO: MarkCheck needs to add an item to the bad
     MarkCheck, // todo
     WhaleRoll, // todo
-    TileRoll, // todo
-    MoleRoll, // todo
+    TileRoll,  // todo
+    MoleRoll,  // todo
     TIDLookup,
     SIDLookup,
 }
@@ -132,7 +132,7 @@ async fn run_ambeef() -> Option<String> {
     };
     return Some(format!(
         "You are team {} (unless you reroll, I'm a chatbot not your boss)",
-        name 
+        name
     ));
 }
 
@@ -156,12 +156,19 @@ async fn run_followage() -> Option<String> {
         days += 1;
         num -= 86400;
     }
-    return Some(format!("You have been following for {} years, {} months, and {} days", years, months, days));
+    return Some(format!(
+        "You have been following for {} years, {} months, and {} days",
+        years, months, days
+    ));
 }
 
 async fn run_shinyroll(broadcaster_id: &str) -> Option<String> {
-    if broadcaster_id == "861073341" { return None; } // Yarnity
-    if broadcaster_id == "29002848" { return None; } // Kwikpanik
+    if broadcaster_id == "861073341" {
+        return None;
+    } // Yarnity
+    if broadcaster_id == "29002848" {
+        return None;
+    } // Kwikpanik
     let num = rand::rng().random_range(1..8193);
     return Some(format!("You rolled {:04}", num));
 }

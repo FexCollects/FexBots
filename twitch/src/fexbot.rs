@@ -182,7 +182,15 @@ impl FexBot {
         };
 
         // Get the response
-        let Some(res) = command.run(body, int_chatter_id, payload.broadcaster_user_id.as_str(), &self.conn).await else {
+        let Some(res) = command
+            .run(
+                body,
+                int_chatter_id,
+                payload.broadcaster_user_id.as_str(),
+                &self.conn,
+            )
+            .await
+        else {
             // should probaably error in here
             return Ok(());
         };
