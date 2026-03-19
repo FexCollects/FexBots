@@ -26,6 +26,7 @@ impl MigrationTrait for Migration {
             "!tileroll ",
             "!moleroll",
             "!tid",
+            "!sid",
         ];
 
         for name in seed_data {
@@ -59,6 +60,7 @@ impl MigrationTrait for Migration {
             "!tileroll ",
             "!moleroll",
             "!tid",
+            "!sid",
         ];
 
         command::Entity::delete_many()

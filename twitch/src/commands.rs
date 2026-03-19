@@ -9,21 +9,27 @@ pub enum Command {
     Ping,
     DogFonts,
     MoreMoles,
-    ShinyRoll,
+    // TODO: implement once per day limit
+    ShinyRoll, 
+    // TODO: add Team X Badge to bag
     AMBeef,
     Followage,
     TIDRoll,
     SIDRoll,
-    MarkCheck,
-    WhaleRoll,
-    TileRoll,
-    MoleRoll,
+    // TODO: The next four need to actually roll and store a PID
+    // TODO: MarkCheck needs to add an item to the bad
+    MarkCheck, // todo
+    WhaleRoll, // todo
+    TileRoll, // todo
+    MoleRoll, // todo
     TIDLookup,
+    SIDLookup,
 }
 
 impl Command {
     pub fn find(trigger: &str) -> Option<Self> {
         match trigger {
+            s if !s.starts_with("!") => None,
             s if s.starts_with("!he'll") => Some(Command::Hell),
             s if s.starts_with("!honk") => Some(Command::Honk),
             s if s.starts_with("!ping") => Some(Command::Ping),
@@ -31,6 +37,11 @@ impl Command {
             s if s.starts_with("!more moles") => Some(Command::MoreMoles),
             s if s.starts_with("!tidroll") => Some(Command::TIDRoll),
             s if s.starts_with("!tid") => Some(Command::TIDLookup),
+            s if s.starts_with("!sidroll") => Some(Command::SIDRoll),
+            s if s.starts_with("!sid") => Some(Command::SIDLookup),
+            s if s.starts_with("!ambeef") => Some(Command::AMBeef),
+            s if s.starts_with("!followage") => Some(Command::Followage),
+            s if s.starts_with("!shinyroll") => Some(Command::ShinyRoll),
             _ => None,
         }
     }
@@ -52,6 +63,7 @@ impl Command {
             Command::TileRoll => 13,
             Command::MoleRoll => 14,
             Command::TIDLookup => 15,
+            Command::SIDLookup => 16,
         }
     }
 
@@ -59,6 +71,7 @@ impl Command {
         &self,
         _body: String,
         chatter_id: i64,
+        broadcaster_id: &str,
         conn: &DatabaseConnection,
     ) -> Option<String> {
         // Store the fact that a command was ran
@@ -74,6 +87,11 @@ impl Command {
             Command::MoreMoles => Some("more holes".into()),
             Command::TIDRoll => run_tidroll(chatter_id, conn).await,
             Command::TIDLookup => run_tidlookup(chatter_id, conn).await,
+            Command::AMBeef => run_ambeef().await,
+            Command::Followage => run_followage().await,
+            Command::SIDRoll => run_sidroll(chatter_id, conn).await,
+            Command::SIDLookup => Some("Your new SID is *****".into()),
+            Command::ShinyRoll => run_shinyroll(broadcaster_id).await,
             _ => todo!(),
         }
     }
@@ -97,14 +115,53 @@ async fn run_tidroll(chatter_id: i64, conn: &DatabaseConnection) -> Option<Strin
     return Some(format!("Your new TID is {:05}", num));
 }
 
-/*
-    if shiny_roll_enabled && msg.starts_with("!shinyroll") {
-    if msg.starts_with("!ambeef") {
-    if msg.starts_with("!followage") {
-    if msg.starts_with("!tidroll") {
-    if msg.starts_with("!sidroll") {
-    if msg.starts_with("!markcheck") {
-    if msg.starts_with("!whaleroll") {
-    if msg.starts_with("!tileroll ") {
-    if msg.starts_with("!moleroll") {
-*/
+async fn run_sidroll(chatter_id: i64, conn: &DatabaseConnection) -> Option<String> {
+    let num = rand::rng().random_range(0..65536);
+
+    let Ok(_) = Mutation::set_chatter_sid(conn, chatter_id, num).await else {
+        return Some("Something went wrong, go yell at Fex".into());
+    };
+
+    return Some(format!("Your new SID is *****"));
+}
+
+async fn run_ambeef() -> Option<String> {
+    let name = match rand::rng().random_range(1..3) {
+        1 => "ShinyCatherine",
+        _ => "CannedWolfMeat",
+    };
+    return Some(format!(
+        "You are team {} (unless you reroll, I'm a chatbot not your boss)",
+        name 
+    ));
+}
+
+async fn run_followage() -> Option<String> {
+    let mut num = rand::rng().random_range(1..31536000);
+    if rand::rng().random_range(1..10) == 5 {
+        num += rand::rng().random_range(31536000..315360000);
+    }
+    let mut years = 0;
+    while num >= 31536000 {
+        years += 1;
+        num -= 31536000;
+    }
+    let mut months = 0;
+    while num >= 2628000 {
+        months += 1;
+        num -= 2628000;
+    }
+    let mut days = 0;
+    while num >= 86400 {
+        days += 1;
+        num -= 86400;
+    }
+    return Some(format!("You have been following for {} years, {} months, and {} days", years, months, days));
+}
+
+async fn run_shinyroll(broadcaster_id: &str) -> Option<String> {
+    if broadcaster_id == "861073341" { return None; } // Yarnity
+    if broadcaster_id == "29002848" { return None; } // Kwikpanik
+    let num = rand::rng().random_range(1..8193);
+    return Some(format!("You rolled {:04}", num));
+}

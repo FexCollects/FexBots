@@ -78,6 +78,13 @@ impl Mutation {
         c.update(db).await
     }
 
+    pub async fn set_chatter_sid(db: &DbConn, id: i64, sid: i64) -> Result<chatter::Model, DbErr> {
+        let c = Chatter::find_by_id(id).one(db).await?.unwrap();
+        let mut c: chatter::ActiveModel = c.into();
+        c.sid = Set(sid);
+        c.update(db).await
+    }
+
     pub async fn get_or_create_chatter_command(
         db: &DbConn,
         chatter_id: i64,

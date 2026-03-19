@@ -7,7 +7,7 @@ use twitch::fexbot::{FexBot, FexBotConfig};
 async fn main() -> Result<(), eyre::Report> {
     // Setup terminal display of tracing logs
     unsafe {
-        env::set_var("RUST_LOG", "debug");
+        env::set_var("RUST_LOG", "warning");
     }
     tracing_subscriber::fmt::init();
 
