@@ -1,3 +1,4 @@
+use ::entity::{chatter, chatter::Entity as Chatter};
 use ::entity::{post, post::Entity as Post};
 use sea_orm::*;
 
@@ -22,5 +23,9 @@ impl Query {
 
         // Fetch paginated posts
         paginator.fetch_page(page - 1).await.map(|p| (p, num_pages))
+    }
+
+    pub async fn find_chatter_by_id(db: &DbConn, id: i64) -> Result<Option<chatter::Model>, DbErr> {
+        Chatter::find_by_id(id).one(db).await
     }
 }

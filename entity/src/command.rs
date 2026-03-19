@@ -11,6 +11,8 @@ pub struct Model {
     #[serde(skip_deserializing)]
     pub id: i64,
     pub name: String,
+    #[sea_orm(has_many, via = "chatter_command")]
+    pub chatters: HasMany<super::chatter::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

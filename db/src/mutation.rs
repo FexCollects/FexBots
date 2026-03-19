@@ -1,4 +1,5 @@
 use ::entity::{chatter, chatter::Entity as Chatter};
+use ::entity::{chatter_command, chatter_command::Entity as ChatterCommand};
 use ::entity::{post, post::Entity as Post};
 use sea_orm::*;
 
@@ -69,4 +70,46 @@ impl Mutation {
         .insert(db)
         .await
     }
+
+    pub async fn set_chatter_tid(
+        db: &DbConn,
+        id: i64,
+        tid: i64,
+    ) -> Result<chatter::Model, DbErr> {
+        let c = Chatter::find_by_id(id).one(db).await?.unwrap();
+        let mut c: chatter::ActiveModel = c.into();
+        c.tid = Set(tid);
+        c.update(db).await
+    }
+
+    pub async fn get_or_create_chatter_command(
+        db: &DbConn,
+        chatter_id: i64,
+        command_id: i64,
+    ) -> Result<chatter_command::Model, DbErr> {
+        if let Ok(Some(cc)) = ChatterCommand::find_by_id((chatter_id, command_id)).one(db).await {
+            return Ok(cc);
+        }
+
+        chatter_command::ActiveModel {
+            chatter_id: Set(chatter_id),
+            command_id: Set(command_id),
+            ..Default::default()
+        }
+        .insert(db)
+        .await
+    }
+
+    pub async fn inc_chatter_command_count(
+        db: &DbConn,
+        chatter_id: i64,
+        command_id: i64,
+    ) -> Result<chatter_command::Model, DbErr> {
+        let cc = Self::get_or_create_chatter_command(db, chatter_id, command_id).await?; 
+        let count = cc.count;
+        let mut cc: chatter_command::ActiveModel = cc.into();
+        cc.count = Set(count + 1);
+        cc.update(db).await
+    }
+
 }

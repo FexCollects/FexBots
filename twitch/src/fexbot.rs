@@ -25,7 +25,6 @@ pub struct FexBot {
     pub client: HelixClient<'static, reqwest::Client>,
     pub token: Arc<Mutex<twitch_oauth2::UserToken>>,
     pub bot_id: twitch_api::types::UserId,
-    pub commands: Vec<(String, CmdRunFn)>,
     pub conn: DatabaseConnection,
 }
 
@@ -47,17 +46,10 @@ impl FexBot {
         .await?;
         let token = Arc::new(Mutex::new(token));
 
-        let commands: Vec<(String, CmdRunFn)> = vec![
-            (PingCommand::TRIGGER.into(), PingCommand::run as CmdRunFn),
-            (DogFontsCommand::TRIGGER.into(), DogFontsCommand::run as CmdRunFn),
-            (MoreMolesCommand::TRIGGER.into(), MoreMolesCommand::run as CmdRunFn),
-        ];
-
         Ok(FexBot {
             client,
             token,
             bot_id: twitch_api::types::UserId::new(config.bot_user_id),
-            commands,
             conn: config.conn,
         })
     }
@@ -154,7 +146,7 @@ impl FexBot {
         >,
         token: &UserToken,
     ) -> Result<(), eyre::Report> {
-        let body = payload.message.text.clone();
+        let mut body = payload.message.text.clone();
         let chatter_id = payload.chatter_user_id.as_str();
         let int_chatter_id = chatter_id.parse::<i64>()?;
 
@@ -168,29 +160,11 @@ impl FexBot {
         // Special case the commands that look for a specific substring in the
         // message body
         if body.contains("he'll") {
-            self.client
-                .send_chat_message_reply(
-                    &subscription.condition.broadcaster_user_id,
-                    &subscription.condition.user_id,
-                    &payload.message_id,
-                    "yeag",
-                    token,
-                )
-                .await?;
-            return Ok(());
+            body = "!he'll".into();
         }
 
         if body.contains("honk") {
-            self.client
-                .send_chat_message_reply(
-                    &subscription.condition.broadcaster_user_id,
-                    &subscription.condition.user_id,
-                    &payload.message_id,
-                    "honk 🪿",
-                    token,
-                )
-                .await?;
-            return Ok(());
+            body = "!honk".into();
         }
 
         // Handle the normal !command commands
@@ -198,22 +172,25 @@ impl FexBot {
             return Ok(());
         }
 
-        for (name, func) in &self.commands {
-            if body.starts_with(name) {
-                if let Some(res) = func(body) {
-                    self.client
-                        .send_chat_message_reply(
-                            &subscription.condition.broadcaster_user_id,
-                            &subscription.condition.user_id,
-                            &payload.message_id,
-                            &*res,
-                            token,
-                        )
-                        .await?;
-                }
-                break;
-            }
-        }
+        let Some(command) = Command::find(&body) else {
+            return Ok(());
+        };
+
+        // Get the response
+        let Some(res) = command.run(body, int_chatter_id, &self.conn).await else {
+            // should probaably error in here
+            return Ok(());
+        };
+
+        self.client
+            .send_chat_message_reply(
+                &subscription.condition.broadcaster_user_id,
+                &subscription.condition.user_id,
+                &payload.message_id,
+                &*res,
+                token,
+            )
+        .await?;
 
         Ok(())
     }

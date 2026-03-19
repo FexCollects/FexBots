@@ -13,6 +13,8 @@ pub struct Model {
     pub name: String,
     pub tid: i64,
     pub sid: i64,
+    #[sea_orm(has_many, via = "chatter_command")]
+    pub commands: HasMany<super::command::Entity>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

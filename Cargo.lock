@@ -4079,6 +4079,7 @@ dependencies = [
  "db",
  "eyre",
  "futures",
+ "rand 0.9.2",
  "reqwest",
  "sea-orm",
  "tokio",

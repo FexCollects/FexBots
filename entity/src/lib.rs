@@ -3,5 +3,6 @@
 pub mod prelude;
 
 pub mod chatter;
+pub mod chatter_command;
 pub mod command;
 pub mod post;
