@@ -1,5 +1,5 @@
-use db::query::Query;
 use db::mutation::Mutation;
+use db::query::Query;
 use rand::Rng;
 use sea_orm::DatabaseConnection;
 
@@ -31,10 +31,10 @@ impl Command {
             s if s.starts_with("!more moles") => Some(Command::MoreMoles),
             s if s.starts_with("!tidroll") => Some(Command::TIDRoll),
             s if s.starts_with("!tid") => Some(Command::TIDLookup),
-            _ => None
+            _ => None,
         }
     }
-    
+
     pub fn get_id(&self) -> i64 {
         match self {
             Command::Hell => 1,
@@ -55,7 +55,12 @@ impl Command {
         }
     }
 
-    pub async fn run(&self, _body: String, chatter_id: i64, conn: &DatabaseConnection) -> Option<String> {
+    pub async fn run(
+        &self,
+        _body: String,
+        chatter_id: i64,
+        conn: &DatabaseConnection,
+    ) -> Option<String> {
         // Store the fact that a command was ran
         if let Err(_) = Mutation::inc_chatter_command_count(conn, chatter_id, self.get_id()).await {
             tracing::warn!("Failed to count chatter command");

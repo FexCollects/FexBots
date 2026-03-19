@@ -10,8 +10,8 @@ use twitch_api::{
 };
 use twitch_oauth2::{TwitchToken as _, UserToken};
 
-use crate::websocket;
 use crate::commands::*;
+use crate::websocket;
 
 pub struct FexBotConfig {
     pub client_id: String,
@@ -64,8 +64,8 @@ impl FexBot {
             connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
             chats: vec![
                 twitch_api::types::UserId::new("68411561".into()), // FexCollects
-//                twitch_api::types::UserId::new("176723607".into()), // SBCoop
-//                twitch_api::types::UserId::new("106239207".into()), // Magnemite
+                //                twitch_api::types::UserId::new("176723607".into()), // SBCoop
+                //                twitch_api::types::UserId::new("106239207".into()), // Magnemite
                 twitch_api::types::UserId::new("861073341".into()), // Yarnity
             ],
         };
@@ -155,7 +155,12 @@ impl FexBot {
             return Ok(());
         }
 
-        let _ = Mutation::get_or_create_chatter(&self.conn, int_chatter_id, payload.chatter_user_name.as_str().into()).await?; 
+        let _ = Mutation::get_or_create_chatter(
+            &self.conn,
+            int_chatter_id,
+            payload.chatter_user_name.as_str().into(),
+        )
+        .await?;
 
         // Special case the commands that look for a specific substring in the
         // message body
@@ -190,7 +195,7 @@ impl FexBot {
                 &*res,
                 token,
             )
-        .await?;
+            .await?;
 
         Ok(())
     }

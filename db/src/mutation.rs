@@ -52,7 +52,7 @@ impl Mutation {
     pub async fn delete_all_posts(db: &DbConn) -> Result<DeleteResult, DbErr> {
         Post::delete_many().exec(db).await
     }
-    
+
     pub async fn get_or_create_chatter(
         db: &DbConn,
         id: i64,
@@ -71,11 +71,7 @@ impl Mutation {
         .await
     }
 
-    pub async fn set_chatter_tid(
-        db: &DbConn,
-        id: i64,
-        tid: i64,
-    ) -> Result<chatter::Model, DbErr> {
+    pub async fn set_chatter_tid(db: &DbConn, id: i64, tid: i64) -> Result<chatter::Model, DbErr> {
         let c = Chatter::find_by_id(id).one(db).await?.unwrap();
         let mut c: chatter::ActiveModel = c.into();
         c.tid = Set(tid);
@@ -87,7 +83,10 @@ impl Mutation {
         chatter_id: i64,
         command_id: i64,
     ) -> Result<chatter_command::Model, DbErr> {
-        if let Ok(Some(cc)) = ChatterCommand::find_by_id((chatter_id, command_id)).one(db).await {
+        if let Ok(Some(cc)) = ChatterCommand::find_by_id((chatter_id, command_id))
+            .one(db)
+            .await
+        {
             return Ok(cc);
         }
 
@@ -105,11 +104,10 @@ impl Mutation {
         chatter_id: i64,
         command_id: i64,
     ) -> Result<chatter_command::Model, DbErr> {
-        let cc = Self::get_or_create_chatter_command(db, chatter_id, command_id).await?; 
+        let cc = Self::get_or_create_chatter_command(db, chatter_id, command_id).await?;
         let count = cc.count;
         let mut cc: chatter_command::ActiveModel = cc.into();
         cc.count = Set(count + 1);
         cc.update(db).await
     }
-
 }

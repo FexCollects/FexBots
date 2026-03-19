@@ -1,6 +1,6 @@
 use entity::command;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
-use sea_orm_migration::{prelude::*};
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -10,13 +10,12 @@ impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
 
-
         let seed_data = vec![
-            "he'll", 
-            "honk", 
-            "!ping", 
-            "!dogfonts", 
-            "!more moles", 
+            "he'll",
+            "honk",
+            "!ping",
+            "!dogfonts",
+            "!more moles",
             "!shinyroll",
             "!ambeef",
             "!followage",
@@ -45,11 +44,11 @@ impl MigrationTrait for Migration {
         let db = manager.get_connection();
 
         let seed_data = vec![
-            "he'll", 
-            "honk", 
-            "!ping", 
-            "!dogfonts", 
-            "!more moles", 
+            "he'll",
+            "honk",
+            "!ping",
+            "!dogfonts",
+            "!more moles",
             "!shinyroll",
             "!ambeef",
             "!followage",

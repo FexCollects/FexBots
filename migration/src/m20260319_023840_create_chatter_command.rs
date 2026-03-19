@@ -16,10 +16,10 @@ impl MigrationTrait for Migration {
                     .col(integer("count").not_null().default(0))
                     .primary_key(
                         Index::create()
-                                .name("pk-chatter_command")
-                                .col("chatter_id")
-                                .col("command_id")
-                                .primary(),
+                            .name("pk-chatter_command")
+                            .col("chatter_id")
+                            .col("command_id")
+                            .primary(),
                     )
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
