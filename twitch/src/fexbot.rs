@@ -2,13 +2,14 @@ use db::mutation::Mutation;
 use eyre::WrapErr;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
+use std::sync::mpsc::channel;
 use tokio::sync::Mutex;
 use twitch_api::{
     HelixClient,
     client::ClientDefault,
     eventsub::{self, Event, Message, Payload},
 };
-use twitch_oauth2::{TwitchToken as _, UserToken};
+use twitch_oauth2::TwitchToken as _;
 
 use crate::commands::*;
 use crate::websocket;
@@ -26,6 +27,13 @@ pub struct FexBot {
     pub token: Arc<Mutex<twitch_oauth2::UserToken>>,
     pub bot_id: twitch_api::types::UserId,
     pub conn: DatabaseConnection,
+}
+
+struct SendMessageData {
+    broadcaster_id: twitch_api::types::UserId,
+    chatter_id: twitch_api::types::UserId,
+    message_id: twitch_api::types::MsgId,
+    message: String,
 }
 
 impl FexBot {
@@ -69,6 +77,12 @@ impl FexBot {
                 twitch_api::types::UserId::new("861073341".into()), // Yarnity
             ],
         };
+
+        // Set up 3 tasks
+        //   - refresh_token which periodically generates a new token as needed
+        //   - send_message which consumes queued messages and posts them to twitch chat
+        //   - ws which listens on the ws connection, runs commands and queues responses
+
         let refresh_token = async move {
             let token = self.token.clone();
             let client = self.client.clone();
@@ -92,29 +106,73 @@ impl FexBot {
             #[allow(unreachable_code)]
             Ok(())
         };
-        let ws = websocket.run(|e, ts| async { self.handle_event(e, ts).await });
-        futures::future::try_join(ws, refresh_token).await?;
+
+        // message queue
+        let (tx, rx) = channel::<SendMessageData>();
+
+        let send_message = async move {
+            let token = self.token.clone();
+            let client = self.client.clone();
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                loop {
+                    match rx.try_recv() {
+                        Err(_) => break,
+                        Ok(msg) => {
+                            let token = token.lock().await.clone();
+                            let _ = client
+                                .send_chat_message_reply(
+                                    msg.broadcaster_id,
+                                    msg.chatter_id,
+                                    msg.message_id,
+                                    &*msg.message,
+                                    &token,
+                                )
+                                .await
+                                .inspect_err(|e| tracing::warn!("Failed to send message: {e}"));
+                        }
+                    }
+                }
+            }
+            #[allow(unreachable_code)]
+            Ok(())
+        };
+
+        let ws = websocket.run(|e, ts| async {
+            //let token = self.token.clone();
+            //let client = self.client.clone();
+            self.handle_event(e, ts, tx.clone()).await
+        });
+
+        futures::future::try_join3(ws, refresh_token, send_message).await?;
         Ok(())
     }
     async fn handle_event(
         &self,
         event: Event,
         timestamp: twitch_api::types::Timestamp,
+        msg_queue: std::sync::mpsc::Sender<SendMessageData>,
     ) -> Result<(), eyre::Report> {
-        let token = self.token.lock().await;
         match event {
             Event::ChannelChatMessageV1(Payload {
                 message: Message::Notification(payload),
                 subscription,
                 ..
             }) => {
-                tracing::debug!(
-                    "[{}] {}: {}",
-                    timestamp,
-                    payload.chatter_user_name,
-                    payload.message.text
-                );
-                self.command(&payload, &subscription, &token).await?;
+                let conn = self.conn.clone();
+                tokio::spawn(async move {
+                    tracing::debug!(
+                        "[{}] {}: {}",
+                        timestamp,
+                        payload.chatter_user_name,
+                        payload.message.text
+                    );
+
+                    let _ = FexBot::command(conn, &payload, &subscription, msg_queue)
+                        .await
+                        .inspect_err(|e| tracing::warn!("Failed to run command: {}", e));
+                });
             }
             Event::ChannelChatNotificationV1(Payload {
                 message: Message::Notification(payload),
@@ -139,12 +197,12 @@ impl FexBot {
     }
 
     async fn command(
-        &self,
+        conn: DatabaseConnection,
         payload: &eventsub::channel::ChannelChatMessageV1Payload,
         subscription: &eventsub::EventSubscriptionInformation<
             eventsub::channel::ChannelChatMessageV1,
         >,
-        token: &UserToken,
+        msg_queue: std::sync::mpsc::Sender<SendMessageData>,
     ) -> Result<(), eyre::Report> {
         let mut body = payload.message.text.clone();
         let chatter_id = payload.chatter_user_id.as_str();
@@ -154,13 +212,6 @@ impl FexBot {
         if chatter_id == "1215874701" {
             return Ok(());
         }
-
-        let _ = Mutation::get_or_create_chatter(
-            &self.conn,
-            int_chatter_id,
-            payload.chatter_user_name.as_str().into(),
-        )
-        .await?;
 
         // Special case the commands that look for a specific substring in the
         // message body
@@ -181,30 +232,36 @@ impl FexBot {
             return Ok(());
         };
 
+        let _ = Mutation::get_or_create_chatter(
+            &conn,
+            int_chatter_id,
+            payload.chatter_user_name.as_str().into(),
+        )
+        .await?;
+
         // Get the response
-        let Some(res) = command
+        // TODO: command run shouldn't return an optional
+        let Some(message) = command
             .run(
-                body,
+                body.clone(),
                 int_chatter_id,
                 payload.broadcaster_user_id.as_str(),
-                &self.conn,
+                conn,
             )
             .await
         else {
-            // should probaably error in here
             return Ok(());
         };
 
-        self.client
-            .send_chat_message_reply(
-                &subscription.condition.broadcaster_user_id,
-                &subscription.condition.user_id,
-                &payload.message_id,
-                &*res,
-                token,
-            )
-            .await?;
+        let msg = SendMessageData {
+            broadcaster_id: subscription.condition.broadcaster_user_id.clone(),
+            chatter_id: subscription.condition.user_id.clone(),
+            message_id: payload.message_id.clone(),
+            message,
+        };
 
-        Ok(())
+        msg_queue
+            .send(msg)
+            .wrap_err_with(|| format!("Failed to send reponse for command {}", body))
     }
 }

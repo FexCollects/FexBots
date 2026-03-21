@@ -19,7 +19,6 @@ pub enum Command {
     // TODO: The next four need to actually roll and store a PID
     // TODO: MarkCheck needs to add an item to the bad
     MarkCheck,
-    // TODO: fix bug that blocks other commands from running
     WhaleRoll,
     // TODO: implement
     TileRoll,
@@ -77,12 +76,16 @@ impl Command {
         _body: String,
         chatter_id: i64,
         broadcaster_id: &str,
-        conn: &DatabaseConnection,
+        conn: DatabaseConnection,
     ) -> Option<String> {
         // Store the fact that a command was ran
-        if let Err(_) = Mutation::inc_chatter_command_count(conn, chatter_id, self.get_id()).await {
-            tracing::warn!("Failed to count chatter command");
-        }
+        let command_id = self.get_id();
+        let conn_clone = conn.clone();
+        tokio::spawn(async move {
+            let _ = Mutation::inc_chatter_command_count(&conn_clone, chatter_id, command_id)
+                .await
+                .inspect_err(|e| tracing::warn!("Failed to count chatter command: {e}"));
+        });
 
         match self {
             Command::Hell => Some("yeag".into()),
@@ -90,11 +93,11 @@ impl Command {
             Command::Ping => Some("pong".into()),
             Command::DogFonts => Some("he'll yeag".into()),
             Command::MoreMoles => Some("more holes".into()),
-            Command::TIDRoll => run_tidroll(chatter_id, conn).await,
-            Command::TIDLookup => run_tidlookup(chatter_id, conn).await,
+            Command::TIDRoll => run_tidroll(chatter_id, &conn).await,
+            Command::TIDLookup => run_tidlookup(chatter_id, &conn).await,
             Command::AMBeef => run_ambeef().await,
             Command::Followage => run_followage().await,
-            Command::SIDRoll => run_sidroll(chatter_id, conn).await,
+            Command::SIDRoll => run_sidroll(chatter_id, &conn).await,
             Command::SIDLookup => Some("Your new SID is *****".into()),
             Command::ShinyRoll => run_shinyroll(broadcaster_id).await,
             Command::MarkCheck => run_markcheck().await,
