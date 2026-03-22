@@ -1,6 +1,8 @@
+use chrono::{Duration, Utc};
 use db::mutation::Mutation;
 use db::query::Query;
 use rand::Rng;
+use rand::SeedableRng;
 use sea_orm::DatabaseConnection;
 
 pub enum Command {
@@ -20,7 +22,6 @@ pub enum Command {
     // TODO: MarkCheck needs to add an item to the bad
     MarkCheck,
     WhaleRoll,
-    // TODO: implement
     TileRoll,
     MoleRoll,
     TIDLookup,
@@ -46,6 +47,7 @@ impl Command {
             s if s.starts_with("!markcheck") => Some(Command::MarkCheck),
             s if s.starts_with("!moleroll") => Some(Command::MoleRoll),
             s if s.starts_with("!whaleroll") => Some(Command::WhaleRoll),
+            s if s.starts_with("!tileroll") => Some(Command::TileRoll),
             _ => None,
         }
     }
@@ -73,7 +75,7 @@ impl Command {
 
     pub async fn run(
         &self,
-        _body: String,
+        body: String,
         chatter_id: i64,
         broadcaster_id: &str,
         conn: DatabaseConnection,
@@ -103,7 +105,7 @@ impl Command {
             Command::MarkCheck => run_markcheck().await,
             Command::MoleRoll => run_moleroll().await,
             Command::WhaleRoll => run_whaleroll().await,
-            _ => todo!(),
+            Command::TileRoll => run_tileroll(body).await,
         }
     }
 }
@@ -297,7 +299,7 @@ async fn run_moleroll() -> Option<String> {
 }
 
 async fn run_whaleroll() -> Option<String> {
-    let mins = rand::rng().random_range(1..35);
+    let mins = rand::rng().random_range(1..35) * 60;
     tokio::time::sleep(std::time::Duration::from_secs(mins)).await;
 
     if rand::rng().random_range(1..8193) == 8192 {
@@ -305,4 +307,53 @@ async fn run_whaleroll() -> Option<String> {
     }
 
     return Some("You found a whale".into());
+}
+
+fn get_daily_tile() -> u32 {
+    let date_time = Utc::now() - Duration::hours(6);
+    let formatted = format!("{}", date_time.format("%Y%m%d"));
+    let seed = formatted.parse::<u64>().unwrap();
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
+    rng.random::<u32>() % 100 + 1
+}
+
+async fn run_tileroll(body: String) -> Option<String> {
+    let Some(tile) = body.strip_prefix("!tileroll ") else {
+        return Some("try !tileroll 999".into());
+    };
+
+    let Ok(tile) = tile.parse::<u32>() else {
+        return Some("try !tileroll 999".into());
+    };
+
+    if tile < 1 || tile > 100 {
+        return Some("tile must be between 1 and 100!".into());
+    }
+
+    let rng_num = rand::rng().random_range(1..101);
+    let daily = get_daily_tile();
+    tracing::warn!("Daily tile: {daily}");
+    let pokemon = if tile == daily {
+        match rng_num {
+            1..=50 => "feebas",
+            51..=60 => "tentacool",
+            61..=90 => "magikarp",
+            _ => "carvanha",
+        }
+    } else {
+        match rng_num {
+            1..=20 => "tentacool",
+            21..=80 => "magikarp",
+            _ => "carvanha",
+        }
+    };
+
+    let shiny = rand::rng().random_range(1..8193);
+    let resp = if shiny == 8192 {
+        format!("✨✨✨You reeled in a SHINY {}✨✨✨", pokemon)
+    } else {
+        format!("You reeled in a {}", pokemon)
+    };
+
+    return Some(resp);
 }

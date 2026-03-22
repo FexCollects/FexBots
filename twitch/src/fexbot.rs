@@ -240,7 +240,6 @@ impl FexBot {
         .await?;
 
         // Get the response
-        // TODO: command run shouldn't return an optional
         let Some(message) = command
             .run(
                 body.clone(),
