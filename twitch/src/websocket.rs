@@ -79,6 +79,17 @@ impl ChatWebsocketClient {
                         .context("when reestablishing connection")?;
                     continue;
                 }
+                Err(_) => {
+                    tracing::warn!(
+                        "connection error, reestablishing"
+                    );
+                    s = self
+                        .connect()
+                        .instrument(span)
+                        .await
+                        .context("when reestablishing connection")?;
+                    continue;
+                }
                 _ => msg.context("when getting message")?,
             };
             self.process_message(msg, &mut event_fn)

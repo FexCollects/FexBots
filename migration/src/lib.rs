@@ -6,6 +6,7 @@ mod m20260318_041233_create_chatter;
 mod m20260318_051448_create_command;
 mod m20260318_051631_seed_command;
 mod m20260319_023840_create_chatter_command;
+mod m20260329_224109_seed_metronome_command;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260318_051448_create_command::Migration),
             Box::new(m20260318_051631_seed_command::Migration),
             Box::new(m20260319_023840_create_chatter_command::Migration),
+            Box::new(m20260329_224109_seed_metronome_command::Migration),
         ]
     }
 }

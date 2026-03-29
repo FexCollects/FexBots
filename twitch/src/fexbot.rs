@@ -72,9 +72,13 @@ impl FexBot {
             connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
             chats: vec![
                 twitch_api::types::UserId::new("68411561".into()), // FexCollects
-                //                twitch_api::types::UserId::new("176723607".into()), // SBCoop
-                //                twitch_api::types::UserId::new("106239207".into()), // Magnemite
+                twitch_api::types::UserId::new("176723607".into()), // SBCoop
+                twitch_api::types::UserId::new("106239207".into()), // Magnemite
                 twitch_api::types::UserId::new("861073341".into()), // Yarnity
+                twitch_api::types::UserId::new("29002848".into()), // Kwikpanik
+                twitch_api::types::UserId::new("103539171".into()), // BigWiggins
+                twitch_api::types::UserId::new("214333642".into()), // LegendLinke
+                twitch_api::types::UserId::new("83193553".into()), // skyfishjack
             ],
         };
 
