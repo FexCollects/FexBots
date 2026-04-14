@@ -111,8 +111,11 @@ impl ChatWebsocketClient {
         match msg {
             tungstenite::Message::Text(s) => {
                 tracing::trace!("{s}");
+                let Ok(parsed) = Event::parse_websocket(&s) else {
+                    return Ok(());
+                };
                 // Parse the message into a [twitch_api::eventsub::EventsubWebsocketData]
-                match Event::parse_websocket(&s)? {
+                match parsed {
                     EventsubWebsocketData::Welcome {
                         payload: WelcomePayload { session },
                         ..

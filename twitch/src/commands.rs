@@ -1,8 +1,7 @@
 use chrono::{Duration, Utc};
 use db::mutation::Mutation;
 use db::query::Query;
-use rand::Rng;
-use rand::SeedableRng;
+use rand::prelude::*;
 use sea_orm::DatabaseConnection;
 
 static MOVES: &'static [&'static str] = &[
@@ -500,10 +499,16 @@ async fn run_sidroll(chatter_id: i64, conn: &DatabaseConnection) -> Option<Strin
 }
 
 async fn run_ambeef() -> Option<String> {
-    let name = match rand::rng().random_range(1..3) {
-        1 => "ShinyCatherine",
-        _ => "CannedWolfMeat",
+    let mut rng = rand::rng();
+
+    let names = vec![
+        "ShinyCatherine",
+        "CannedWolfMeat",
+    ];
+    let Some(name) = names.choose(&mut rng) else {
+        return Some("Something went wrong, go yell at Fex".into());
     };
+
     return Some(format!(
         "You are team {} (unless you reroll, I'm a chatbot not your boss)",
         name
@@ -511,9 +516,10 @@ async fn run_ambeef() -> Option<String> {
 }
 
 async fn run_followage() -> Option<String> {
-    let mut num = rand::rng().random_range(1..31536000);
-    if rand::rng().random_range(1..10) == 5 {
-        num += rand::rng().random_range(31536000..315360000);
+    let mut rng = rand::rng();
+    let mut num = rng.random_range(1..31536000);
+    if rng.random_range(1..10) == 5 {
+        num += rng.random_range(31536000..315360000);
     }
     let mut years = 0;
     while num >= 31536000 {
@@ -548,61 +554,66 @@ async fn run_shinyroll(broadcaster_id: &str) -> Option<String> {
 }
 
 async fn run_markcheck() -> Option<String> {
-    let t = match rand::rng().random_range(1..101) {
-        1 => "a Destiny Mark yarnie1Hype",
-        2 => "an Itemfinder Mark yarnie1Hype",
-        3 => "a Gourmand Mark yarnie1Hype",
-        4 => "a Jumbo Mark yarnie1Hype",
-        5 => "a Mightiest Mark yarnie1Hype",
-        6 => "a Jumbo Mark yarnie1Hype",
-        7 => "a Partner Mark yarnie1Hype",
-        8 => "a Titan Mark yarnie1Hype",
-        9 => "an Alpha Mark yarnie1Hype",
-        10 => "a Lunchtime Mark yarnie1Hype",
-        11 => "a Sleepy-Time Mark yarnie1Yawn",
-        12 => "a Dusk Mark yarnie1Hype",
-        13 => "a Dawn Mark yarnie1Hype",
-        14 => "a Cloudy Mark yarnie1Hype",
-        15 => "a Rainy Mark yarnie1Hype",
-        16 => "a Stormy Mark yarnie1Hype",
-        17 => "a Snowy Mark yarnie1Hype",
-        18 => "a Blizzard Mark yarnie1Hype",
-        19 => "a Sandstorm Mark yarnie1Hype",
-        20 => "a Misty Mark yarnie1Hype",
-        21 => "a Rare Mark yarnie1Hype",
-        22 => "an Uncommon Mark yarnie1Hype",
-        23 => "a Rowdy Mark yarnie1Hype",
-        24 => "an Absent-Minded Mark yarnie1Hype",
-        25 => "a Jittery Mark yarnie1Hype",
-        26 => "an Excited Mark yarnie1Hype",
-        27 => "a Charismatic Mark yarnie1Hype",
-        28 => "a Calmness Mark yarnie1Hype",
-        29 => "an Intense Mark yarnie1Hype",
-        30 => "a Zoned-Out Mark yarnie1Hype",
-        31 => "a Joyful Mark yarnie1Hype",
-        32 => "an Angry Mark yarnie1Hype",
-        33 => "a Smiley Mark yarnie1Hype",
-        34 => "a Teary Mark yarnie1Cry",
-        35 => "an Upbeat Mark yarnie1Hype",
-        36 => "a Peeved Mark yarnie1Hype",
-        37 => "an Intellectual Mark yarnie1Hype",
-        38 => "a Ferocious Mark yarnie1Hype",
-        39 => "a Crafty Mark yarnie1Hype",
-        40 => "a Scowling Mark yarnie1Hype",
-        41 => "a Kindly Mark yarnie1Hype",
-        42 => "a Flustered Mark yarnie1Hype",
-        43 => "a Pumped-Up Mark yarnie1Hype",
-        44 => "a Zero Energy Mark yarnie1Hype",
-        45 => "a Prideful Mark yarnie1Hype",
-        46 => "an Unsure Mark yarnie1Hype",
-        47 => "a Humble Mark yarnie1Hype",
-        48 => "a Thorny Mark yarnie1Hype",
-        49 => "a Vigor Mark yarnie1Hype",
-        50 => "a Slump Mark yarnie1Hype",
-        _ => "no mark yarnie1Cry",
+    let mut rng = rand::rng();
+    let choices = vec![
+        (1, "a Destiny Mark yarnie1Hype"),
+        (1, "an Itemfinder Mark yarnie1Hype"),
+        (1, "a Gourmand Mark yarnie1Hype"),
+        (1, "a Jumbo Mark yarnie1Hype"),
+        (1, "a Mightiest Mark yarnie1Hype"),
+        (1, "a Jumbo Mark yarnie1Hype"),
+        (1, "a Partner Mark yarnie1Hype"),
+        (1, "a Titan Mark yarnie1Hype"),
+        (1, "an Alpha Mark yarnie1Hype"),
+        (1, "a Lunchtime Mark yarnie1Hype"),
+        (1, "a Sleepy-Time Mark yarnie1Yawn"),
+        (1, "a Dusk Mark yarnie1Hype"),
+        (1, "a Dawn Mark yarnie1Hype"),
+        (1, "a Cloudy Mark yarnie1Hype"),
+        (1, "a Rainy Mark yarnie1Hype"),
+        (1, "a Stormy Mark yarnie1Hype"),
+        (1, "a Snowy Mark yarnie1Hype"),
+        (1, "a Blizzard Mark yarnie1Hype"),
+        (1, "a Sandstorm Mark yarnie1Hype"),
+        (1, "a Misty Mark yarnie1Hype"),
+        (1, "a Rare Mark yarnie1Hype"),
+        (1, "an Uncommon Mark yarnie1Hype"),
+        (1, "a Rowdy Mark yarnie1Hype"),
+        (1, "an Absent-Minded Mark yarnie1Hype"),
+        (1, "a Jittery Mark yarnie1Hype"),
+        (1, "an Excited Mark yarnie1Hype"),
+        (1, "a Charismatic Mark yarnie1Hype"),
+        (1, "a Calmness Mark yarnie1Hype"),
+        (1, "an Intense Mark yarnie1Hype"),
+        (1, "a Zoned-Out Mark yarnie1Hype"),
+        (1, "a Joyful Mark yarnie1Hype"),
+        (1, "an Angry Mark yarnie1Hype"),
+        (1, "a Smiley Mark yarnie1Hype"),
+        (1, "a Teary Mark yarnie1Cry"),
+        (1, "an Upbeat Mark yarnie1Hype"),
+        (1, "a Peeved Mark yarnie1Hype"),
+        (1, "an Intellectual Mark yarnie1Hype"),
+        (1, "a Ferocious Mark yarnie1Hype"),
+        (1, "a Crafty Mark yarnie1Hype"),
+        (1, "a Scowling Mark yarnie1Hype"),
+        (1, "a Kindly Mark yarnie1Hype"),
+        (1, "a Flustered Mark yarnie1Hype"),
+        (1, "a Pumped-Up Mark yarnie1Hype"),
+        (1, "a Zero Energy Mark yarnie1Hype"),
+        (1, "a Prideful Mark yarnie1Hype"),
+        (1, "an Unsure Mark yarnie1Hype"),
+        (1, "a Humble Mark yarnie1Hype"),
+        (1, "a Thorny Mark yarnie1Hype"),
+        (1, "a Vigor Mark yarnie1Hype"),
+        (1, "a Slump Mark yarnie1Hype"),
+        (50, "no mark yarnie1Cry"),
+    ];
+
+    let Ok((_,choice)) = choices.choose_weighted(&mut rng, |item| { item.0 }) else {
+        return Some("Something went wrong, go yell at Fex".into());
     };
 
-    return Some(format!("You found {}", t));
+    return Some(format!("You found {}", choice));
 }
 
 async fn run_moleroll() -> Option<String> {
